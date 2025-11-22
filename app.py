@@ -1,6 +1,15 @@
 import streamlit as st
-import google.generativeai as genai
+import subprocess
+import sys
 from PIL import Image
+
+# --- NINJA-INSTALLATION (Denna funkar nu med Python 3.10!) ---
+try:
+    import google.generativeai as genai
+except ImportError:
+    # Om verktyget saknas, installera det tyst i bakgrunden
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "google-generative-ai"])
+    import google.generativeai as genai
 
 # --- SID-INSTÄLLNINGAR ---
 st.set_page_config(page_title="Stryktips-AI", page_icon="⚽")
@@ -13,6 +22,7 @@ with st.sidebar:
     st.header("⚙️ Inställningar")
     api_key = st.text_input("Din Gemini API-nyckel", type="password")
     st.caption("Hämta gratis på: [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)")
+    
     st.divider()
     budget = st.selectbox("Budget", ["64 kr (64 rader)", "128 kr (128 rader)", "256 kr (256 rader)"])
 
