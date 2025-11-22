@@ -1,6 +1,17 @@
 import streamlit as st
-import google.generativeai as genai
+import subprocess
+import sys
 from PIL import Image
+
+# --- NINJA-INSTALLATION ---
+# Vi tvingar in google-biblioteket om servern vägrade installera det innan
+try:
+    import google.generativeai as genai
+except ImportError:
+    st.toast("🔧 Installerar AI-verktyg... Vänta lite!", icon="🤖")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "google-generative-ai"])
+    import google.generativeai as genai
+    st.rerun() # Starta om appen när det är klart
 
 # --- SID-INSTÄLLNINGAR ---
 st.set_page_config(page_title="Stryktips-AI", page_icon="⚽")
@@ -11,7 +22,6 @@ st.write("Ladda upp din kupongbild så analyserar AI:n bästa raden.")
 # --- SIDEBAR ---
 with st.sidebar:
     st.header("⚙️ Inställningar")
-    # Hämta nyckeln från användaren
     api_key = st.text_input("Din Gemini API-nyckel", type="password")
     st.caption("Hämta gratis på: [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)")
     
@@ -22,7 +32,6 @@ with st.sidebar:
 uploaded_file = st.file_uploader("Ladda upp bild på kupongen", type=["jpg", "png", "jpeg"])
 
 if uploaded_file:
-    # Visa bilden
     image = Image.open(uploaded_file)
     st.image(image, caption="Din kupong", use_container_width=True)
 
@@ -35,8 +44,7 @@ if uploaded_file:
             try:
                 genai.configure(api_key=api_key)
                 
-                # Vi använder en "try-catch" loop för att hitta rätt modell
-                # Detta löser problemet med "404 Not Found" om en modell bytt namn
+                # Försök hitta en modell som fungerar
                 models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
                 active_model = None
                 
@@ -44,15 +52,13 @@ if uploaded_file:
                     try:
                         test_model = genai.GenerativeModel(m)
                         active_model = test_model
-                        break # Vi hittade en som funkar!
+                        break
                     except:
-                        continue # Testa nästa
+                        continue
                 
                 if not active_model:
-                     # Nödlösning
                     active_model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
-                # Prompten
                 prompt = f"""
                 Du är en expert på Stryktipset. Analysera denna bild.
                 BUDGET: {budget}
@@ -83,4 +89,3 @@ if uploaded_file:
 
             except Exception as e:
                 st.error(f"Ett fel uppstod: {e}")
-                st.info("Tips: Kolla att din API-nyckel är giltig.")
